@@ -12,15 +12,55 @@
 #include "setup.h"
 
 unsigned long startMillis = 0;
-unsigned long stopMillis = 0;
+unsigned int intervalMillis = 250;
 
-void btStartCallback(uint8_t state, Button * btn)
+unsigned long previousMillis = 0;
+int ledState = LOW;
+int startBlink = 1;
+
+
+void onButtonStartStateChanged(uint8_t btn_event, Button * btn)
 {
-     digitalWrite(MOTOR_PIN, btn->state);
+    if (btn_event == BUTTON_NORMAL_TO_HOLD)
+    {
+        startMillis = millis();
+        digitalWrite(MOTOR_PIN, HIGH);
+        startBlink = 0;
+    }
+
+    if (btn_event == BUTTON_HOLD_TO_RELEASE)
+    {
+        ledState = LOW;
+        digitalWrite(MOTOR_PIN, LOW);
+        startBlink = 1;
+        intervalMillis = millis() - startMillis;
+    }
 }
 
 void loop()
 {
-    btnChanged(&btStart, btStartCallback);
+    btnChanged(&btStart, onButtonStartStateChanged);
+
+
+    if (startBlink == 1)
+    {
+        unsigned long currentMillis = millis();
+        if(currentMillis - previousMillis > intervalMillis) {
+          // save the last time you blinked the LED
+          previousMillis = currentMillis;
+
+          // if the LED is off turn it on and vice-versa:
+          if (ledState == LOW)
+            ledState = HIGH;
+          else
+            ledState = LOW;
+
+          // set the LED with the ledState of the variable:
+          digitalWrite(MOTOR_PIN, ledState);
+        }
+    }
+
+
+
 }
 
